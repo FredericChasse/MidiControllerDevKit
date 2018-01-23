@@ -6,8 +6,8 @@
     <Toolchain Name="ARM GCC Generic" Selected="True">
       <Tool Name="prebuild" Command="" Options="" />
       <Tool Name="assembler" Command="arm-none-eabi-as.exe" Options="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -alh=${OutputDir}/${CompileFile}.lst -g" />
-      <Tool Name="compiler" Command="arm-none-eabi-gcc.exe" Options="-mcpu=cortex-m3 -mthumb -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -Wall -ffunction-sections -ffat-lto-objects -O0" />
-      <Tool Name="linker" Command="arm-none-eabi-gcc.exe" Options="-mcpu=cortex-m3 -mthumb -L Generated_Source\PSoC5 -Wl,-Map,${OutputDir}/${ProjectShortName}.map -T Generated_Source\PSoC5\cm3gcc.ld -specs=nano.specs -Wl,--gc-sections -g -ffunction-sections -O0 -ffat-lto-objects" />
+      <Tool Name="compiler" Command="arm-none-eabi-gcc.exe" Options="-mcpu=cortex-m3 -mthumb -I..\Utilities -I. -IGenerated_Source\PSoC5 -Wa,-alh=${OutputDir}/${CompileFile}.lst -g -Wall -ffunction-sections -ffat-lto-objects -O0" />
+      <Tool Name="linker" Command="arm-none-eabi-gcc.exe" Options="-mcpu=cortex-m3 -mthumb -L Generated_Source\PSoC5 -L ..\BipBuffer -Wl,-Map,${OutputDir}/${ProjectShortName}.map -T Generated_Source\PSoC5\cm3gcc.ld -specs=nano.specs -Wl,--gc-sections -g -ffunction-sections -O0 -ffat-lto-objects" />
       <Tool Name="postbuild" Command="" Options="" />
     </Toolchain>
     <Toolchain Name="ARM MDK Generic" Selected="False">
@@ -221,6 +221,16 @@
           <File BuildType="BUILD" Toolchain="">Generated_Source\PSoC5\KeyboardTimer.h</File>
           <File BuildType="BUILD" Toolchain="">Generated_Source\PSoC5\KeyboardTimer_isr.c</File>
           <File BuildType="BUILD" Toolchain="">Generated_Source\PSoC5\KeyboardTimer_isr.h</File>
+        </Files>
+      </Folder>
+      <Folder BuildType="STRICT" Path="C:\Users\frede\Documents\GitHub\MidiControllerDevKit\MidiControllerDevKit\Prototype.cydsn">
+        <Files Root="C:\Users\frede\Documents\GitHub\MidiControllerDevKit\MidiControllerDevKit\Prototype.cydsn">
+          <File BuildType="BUILD" Toolchain="">..\Utilities\BipBuffer.c</File>
+          <File BuildType="BUILD" Toolchain="">..\Utilities\BipBuffer.h</File>
+          <File BuildType="BUILD" Toolchain="">..\Utilities\byte_buffer.c</File>
+          <File BuildType="BUILD" Toolchain="">..\Utilities\byte_buffer.h</File>
+          <File BuildType="BUILD" Toolchain="">..\Utilities\utilities.c</File>
+          <File BuildType="BUILD" Toolchain="">..\Utilities\utilities.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\frede\Documents\GitHub\MidiControllerDevKit\MidiControllerDevKit\Prototype.cydsn\Export\ARM_GCC_Generic\CapSense_CSD_v3_50">

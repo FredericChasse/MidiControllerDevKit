@@ -17,39 +17,9 @@
       </addressBlock>
       <registers>
         <register>
-          <name>ScanSpeed_CTL_REG</name>
-          <description>CapSense Clock Prescaler Control Register</description>
-          <addressOffset>0x40006497</addressOffset>
-          <size>8</size>
-          <access>read-write</access>
-          <resetValue>0</resetValue>
-          <resetMask>0</resetMask>
-          <fields>
-            <field>
-              <name>Counter</name>
-              <description>Clock Prescaler Enable</description>
-              <lsb>3</lsb>
-              <msb>3</msb>
-              <access>read-only</access>
-              <enumeratedValues>
-                <enumeratedValue>
-                  <name>Disabled</name>
-                  <description>Prescaler counter is disabled</description>
-                  <value>0</value>
-                </enumeratedValue>
-                <enumeratedValue>
-                  <name>Enabled</name>
-                  <description>Prescaler counter is enabled</description>
-                  <value>1</value>
-                </enumeratedValue>
-              </enumeratedValues>
-            </field>
-          </fields>
-        </register>
-        <register>
           <name>CTL_REG</name>
           <description>CapSense Control Register</description>
-          <addressOffset>0x40006575</addressOffset>
+          <addressOffset>0x4000647A</addressOffset>
           <size>8</size>
           <access>read-write</access>
           <resetValue>0</resetValue>
@@ -127,6 +97,36 @@
                 <enumeratedValue>
                   <name>Enabled</name>
                   <description>Clocks are enabled</description>
+                  <value>1</value>
+                </enumeratedValue>
+              </enumeratedValues>
+            </field>
+          </fields>
+        </register>
+        <register>
+          <name>ScanSpeed_CTL_REG</name>
+          <description>CapSense Clock Prescaler Control Register</description>
+          <addressOffset>0x40006499</addressOffset>
+          <size>8</size>
+          <access>read-write</access>
+          <resetValue>0</resetValue>
+          <resetMask>0</resetMask>
+          <fields>
+            <field>
+              <name>Counter</name>
+              <description>Clock Prescaler Enable</description>
+              <lsb>3</lsb>
+              <msb>3</msb>
+              <access>read-only</access>
+              <enumeratedValues>
+                <enumeratedValue>
+                  <name>Disabled</name>
+                  <description>Prescaler counter is disabled</description>
+                  <value>0</value>
+                </enumeratedValue>
+                <enumeratedValue>
+                  <name>Enabled</name>
+                  <description>Prescaler counter is enabled</description>
                   <value>1</value>
                 </enumeratedValue>
               </enumeratedValues>

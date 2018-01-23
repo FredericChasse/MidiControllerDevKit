@@ -28,6 +28,10 @@
 
 #include <project.h>
 
+#include "UsbInterface.h"
+#include "MidiInterface.h"
+#include "Keyboard.h"
+
 #define BUTT1	                (0x01u)
 #define BUTT2	                (0x02u)
 
@@ -77,6 +81,11 @@ uint8 csButtChange = 0u;
 uint8 inqFlagsOld = 0u;
 
 
+Keyboard_t *keyboard;
+UsbInterface_t *usb;
+MidiInterface_t *midi;
+
+
 /*******************************************************************************
 * Function Name: SleepIsr
 ********************************************************************************
@@ -115,205 +124,210 @@ CY_ISR(SleepIsr)
 *******************************************************************************/
 int main()
 {
-    uint8 midiMsg[MIDI_MSG_SIZE]; 
+  uint8 midiMsg[MIDI_MSG_SIZE]; 
 
-    /* Enable Global Interrupts */
-    CyGlobalIntEnable;
+  /* Enable Global Interrupts */
+  CyGlobalIntEnable;
 
-    /* Start USBFS device 0 with VDDD operation */
-    USB_Start(DEVICE, USB_DWR_VDDD_OPERATION); 
+  usb = UsbInterface_GetHandle();
+  midi = MidiInterface_GetHandle();
+  keyboard = Keyboard_GetHandle();
 
-    while(1u)
+  usb->Init(usb);
+  midi->Init(midi);
+  keyboard->Init(keyboard);
+
+  while (1)
+  {
+    CyDelayUs(4000);
+    keyboard->FsmStep(keyboard);
+  }
+
+  /* Start USBFS device 0 with VDDD operation */
+  USB_Start(DEVICE, USB_DWR_VDDD_OPERATION); 
+
+  while(1u)
+  {
+    /* Host can send double SET_INTERFACE request */
+    if(0u != USB_IsConfigurationChanged())
     {
-        /* Host can send double SET_INTERFACE request */
-        if(0u != USB_IsConfigurationChanged())
-        {
-            /* Initialize IN endpoints when device configured */
-            if(0u != USB_GetConfiguration())   
-            {
-                /* Power ON CY8CKIT-044 board */
-//                MIDI_PWR_Write(0u); 
-                
-                /* Start ISR to determine sleep condition */		
-                Sleep_isr_StartEx(SleepIsr);
-                
-                /* Start SleepTimer's operation */
-                SleepTimer_Start();
-                
-            	/* Enable output endpoint */
-                USB_MIDI_Init();
-            }
-            else
-            {
-                SleepTimer_Stop();
-            }    
-        }        
-        
-        /* Service USB MIDI when device is configured */
-        if(0u != USB_GetConfiguration())    
-        {
-            /* Call this API from UART RX ISR for Auto DMA mode */
-            #if(!USB_EP_MANAGEMENT_DMA_AUTO) 
-                USB_MIDI_IN_Service();
-            #endif
-            /* In Manual EP Memory Management mode OUT_EP_Service() 
-            *  may have to be called from main foreground or from OUT EP ISR
-            */
-            #if(!USB_EP_MANAGEMENT_DMA_AUTO) 
-                USB_MIDI_OUT_Service();
-            #endif
+      /* Initialize IN endpoints when device configured */
+      if(0u != USB_GetConfiguration())   
+      {
+        /* Start ISR to determine sleep condition */		
+        Sleep_isr_StartEx(SleepIsr);
 
-            /* Sending Identity Reply Universal System Exclusive message 
-             * back to computer */
-            if(0u != (USB_MIDI1_InqFlags & USB_INQ_IDENTITY_REQ_FLAG))
-            {
-                USB_PutUsbMidiIn(sizeof(MIDI_IDENTITY_REPLY), \
-                            (uint8 *)MIDI_IDENTITY_REPLY, USB_MIDI_CABLE_00);
-                USB_MIDI1_InqFlags &= ~USB_INQ_IDENTITY_REQ_FLAG;
-            }
-            #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
-                if(0u != (USB_MIDI2_InqFlags & USB_INQ_IDENTITY_REQ_FLAG))
-                {
-                    USB_PutUsbMidiIn(sizeof(MIDI_IDENTITY_REPLY), \
-                            (uint8 *)MIDI_IDENTITY_REPLY, USB_MIDI_CABLE_01);
-                    USB_MIDI2_InqFlags &= ~USB_INQ_IDENTITY_REQ_FLAG;
-                }
-            #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
-            
-            /* Service Keys */
-    		if (0u == SW1_Read()) 
-            {
-                csButtStates |= BUTT1;
-            }
-            else
-            {
-                csButtStates &= ~BUTT1;
-            }
-    		if (0u == SW2_Read()) 
-            {
-                csButtStates |= BUTT2;
-            }
-            else
-            {
-                csButtStates &= ~BUTT2;
-            }
-            /* Process any button change */
-    		if (0u != (csButtChange = csButtStates ^ csButtStatesOld)) 
-            {
-    			csButtStatesOld = csButtStates;
+        /* Start SleepTimer's operation */
+        SleepTimer_Start();
 
-    			/* All buttons are mapped to Note-On/Off messages */
-    			midiMsg[MIDI_MSG_TYPE] = USB_MIDI_NOTE_ON;
-    			
-    			/* Button 1 */
-    			if (0u != (csButtChange & BUTT1)) 
-                {
-    				/* Button determines note number */			
-    				midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
-    				if (0u != (csButtStates & BUTT1))
-                    {
-                        /* Note On */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;		
-                    }
-    				else
-                    {
-                        /* Note Off */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF;			
-                    }    
-        			/* Put MIDI Note-On/Off message into input endpoint */
-                    USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
-    			}
-
-    			/* Button 2 */
-    			if (0u != (csButtChange & BUTT2))
-                {
-    				/* Button determines note number */			
-//    				midiMsg[MIDI_NOTE_NUMBER] = NOTE_76;	
-    				midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
-    				if (0u != (csButtStates & BUTT2))
-                    {
-                        /* Note On */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;  
-                    }
-    				else
-                    {
-                        /* Note Off */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF; 
-                    }    
-        			/* Put MIDI Note-On/Off message into input endpoint */
-    				USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
-                    /* Second Note message */
-                    midiMsg[MIDI_MSG_TYPE] = USB_MIDI_NOTE_ON;
-                	midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
-                    if (0u != (csButtStates & BUTT2))
-                    {
-                        /* Note On */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;		    
-                    }
-    				else
-                    {
-                        /* Note Off */
-                        midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF;			
-                    }    
-        			/* Put MIDI Note-On/Off message into input endpoint */
-                    USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
-    			}
-                #if(USB_EP_MANAGEMENT_DMA_AUTO) 
-                   #if (USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF)
-                        MIDI1_UART_DisableRxInt();
-                        #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
-                            MIDI2_UART_DisableRxInt();
-                        #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
-                    #endif /* End USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF */            
-                    USB_MIDI_IN_Service();
-                    #if (USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF)
-                        MIDI1_UART_EnableRxInt();
-                        #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
-                            MIDI2_UART_EnableRxInt();
-                        #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
-                    #endif /* End USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF */                
-                #endif
-    		}
-        
-            /* Check if host requested USB Suspend */
-            if( usbActivityCounter >= USB_SUSPEND_TIMEOUT ) 
-            {
-//                MIDI1_UART_Sleep();
-//                MIDI2_UART_Sleep();
-                
-                /* Power OFF CY8CKIT-044 board */
-//                MIDI_PWR_Write(1u);     
-                
-                /***************************************************************
-                * Disable USBFS block and set DP Interrupt for wake-up 
-                * from sleep mode. 
-                ***************************************************************/
-                USB_Suspend(); 
-                /* Prepares system clocks for sleep mode */
-                CyPmSaveClocks();
-                /***************************************************************
-                * Switch to the Sleep Mode for the PSoC 3 or PSoC 5LP devices:
-                *  - PM_SLEEP_TIME_NONE: wakeup time is defined by PICU source
-                *  - PM_SLEEP_SRC_PICU: PICU wakeup source 
-                ***************************************************************/
-                CyPmSleep(PM_SLEEP_TIME_NONE, PM_SLEEP_SRC_PICU);
-                /* Restore clock configuration */
-                CyPmRestoreClocks();
-                /* Enable USBFS block after power-down mode */
-                USB_Resume();
-                
-                /* Enable output endpoint */
-                USB_MIDI_Init();
-                
-                /* Power ON CY8CKIT-044 board */
-//                MIDI_PWR_Write(0u);
-//                
-//                MIDI1_UART_Wakeup();
-//                MIDI2_UART_Wakeup();
-                usbActivityCounter = 0u; /* Re-init USB Activity Counter*/
-            }
-        }
+        /* Enable output endpoint */
+        USB_MIDI_Init();
+      }
+      else
+      {
+        SleepTimer_Stop();
+      }    
     }
+
+    /* Service USB MIDI when device is configured */
+    if(0u != USB_GetConfiguration())    
+    {
+      /* Call this API from UART RX ISR for Auto DMA mode */
+      #if(!USB_EP_MANAGEMENT_DMA_AUTO) 
+        USB_MIDI_IN_Service();
+      #endif
+      
+      /* In Manual EP Memory Management mode OUT_EP_Service() 
+      *  may have to be called from main foreground or from OUT EP ISR
+      */
+      #if(!USB_EP_MANAGEMENT_DMA_AUTO) 
+        USB_MIDI_OUT_Service();
+      #endif
+
+      /* Sending Identity Reply Universal System Exclusive message 
+      * back to computer */
+      if(0u != (USB_MIDI1_InqFlags & USB_INQ_IDENTITY_REQ_FLAG))
+      {
+        USB_PutUsbMidiIn(sizeof(MIDI_IDENTITY_REPLY), (uint8 *) MIDI_IDENTITY_REPLY, USB_MIDI_CABLE_00);
+        USB_MIDI1_InqFlags &= ~USB_INQ_IDENTITY_REQ_FLAG;
+      }
+      #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
+        if(0u != (USB_MIDI2_InqFlags & USB_INQ_IDENTITY_REQ_FLAG))
+        {
+          USB_PutUsbMidiIn(sizeof(MIDI_IDENTITY_REPLY), \
+            (uint8 *)MIDI_IDENTITY_REPLY, USB_MIDI_CABLE_01);
+          USB_MIDI2_InqFlags &= ~USB_INQ_IDENTITY_REQ_FLAG;
+        }
+      #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
+
+      /* Service Keys */
+      if (0u == SW1_Read()) 
+      {
+        csButtStates |= BUTT1;
+      }
+      else
+      {
+        csButtStates &= ~BUTT1;
+      }
+      if (0u == SW2_Read()) 
+      {
+        csButtStates |= BUTT2;
+      }
+      else
+      {
+        csButtStates &= ~BUTT2;
+      }
+      /* Process any button change */
+      if (0u != (csButtChange = csButtStates ^ csButtStatesOld)) 
+      {
+        csButtStatesOld = csButtStates;
+
+        /* All buttons are mapped to Note-On/Off messages */
+        midiMsg[MIDI_MSG_TYPE] = USB_MIDI_NOTE_ON;
+
+        /* Button 1 */
+        if (0u != (csButtChange & BUTT1)) 
+        {
+          /* Button determines note number */			
+          midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
+          if (0u != (csButtStates & BUTT1))
+          {
+            /* Note On */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;		
+          }
+          else
+          {
+            /* Note Off */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF;			
+          }    
+          /* Put MIDI Note-On/Off message into input endpoint */
+          USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
+        }
+
+        /* Button 2 */
+        if (0u != (csButtChange & BUTT2))
+        {
+          /* Button determines note number */			
+          //    				midiMsg[MIDI_NOTE_NUMBER] = NOTE_76;	
+          midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
+          if (0u != (csButtStates & BUTT2))
+          {
+            /* Note On */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;  
+          }
+          else
+          {
+            /* Note Off */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF; 
+          }    
+          /* Put MIDI Note-On/Off message into input endpoint */
+          USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
+          /* Second Note message */
+          midiMsg[MIDI_MSG_TYPE] = USB_MIDI_NOTE_ON;
+          midiMsg[MIDI_NOTE_NUMBER] = NOTE_72;
+          if (0u != (csButtStates & BUTT2))
+          {
+            /* Note On */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_ON;		    
+          }
+          else
+          {
+            /* Note Off */
+            midiMsg[MIDI_NOTE_VELOCITY] = VOLUME_OFF;			
+          }    
+          /* Put MIDI Note-On/Off message into input endpoint */
+          USB_PutUsbMidiIn(USB_3BYTE_COMMON, midiMsg, USB_MIDI_CABLE_00);
+        }
+        #if(USB_EP_MANAGEMENT_DMA_AUTO) 
+          #if (USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF)
+            MIDI1_UART_DisableRxInt();
+            #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
+              MIDI2_UART_DisableRxInt();
+            #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
+          #endif /* End USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF */            
+          USB_MIDI_IN_Service();
+          #if (USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF)
+            MIDI1_UART_EnableRxInt();
+            #if (USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF)
+              MIDI2_UART_EnableRxInt();
+            #endif /* End USB_MIDI_EXT_MODE >= USB_TWO_EXT_INTRF */
+          #endif /* End USB_MIDI_EXT_MODE >= USB_ONE_EXT_INTRF */                
+        #endif
+      }
+
+      /* Check if host requested USB Suspend */
+      if( usbActivityCounter >= USB_SUSPEND_TIMEOUT ) 
+      {
+
+        /***************************************************************
+        * Disable USBFS block and set DP Interrupt for wake-up 
+        * from sleep mode. 
+        ***************************************************************/
+        USB_Suspend(); 
+
+        /* Prepares system clocks for sleep mode */
+        CyPmSaveClocks();
+
+        /***************************************************************
+        * Switch to the Sleep Mode for the PSoC 3 or PSoC 5LP devices:
+        *  - PM_SLEEP_TIME_NONE: wakeup time is defined by PICU source
+        *  - PM_SLEEP_SRC_PICU: PICU wakeup source 
+        ***************************************************************/
+        CyPmSleep(PM_SLEEP_TIME_NONE, PM_SLEEP_SRC_PICU);
+
+        /* Restore clock configuration */
+        CyPmRestoreClocks();
+
+        /* Enable USBFS block after power-down mode */
+        USB_Resume();
+
+        /* Enable output endpoint */
+        USB_MIDI_Init();
+
+        usbActivityCounter = 0u; /* Re-init USB Activity Counter*/
+      }
+    }
+  }
 }
 
 
@@ -325,24 +339,24 @@ int main()
 *******************************************************************************/
 void USB_callbackLocalMidiEvent(uint8 cable, uint8 *midiMsg) CYREENTRANT
 {
-    /* Support General System On/Off Message. */
-    if((0u == (USB_MIDI1_InqFlags & USB_INQ_SYSEX_FLAG)) \
-            && (0u != (inqFlagsOld & USB_INQ_SYSEX_FLAG)))
+  /* Support General System On/Off Message. */
+  if((0u == (USB_MIDI1_InqFlags & USB_INQ_SYSEX_FLAG)) \
+  && (0u != (inqFlagsOld & USB_INQ_SYSEX_FLAG)))
+  {
+    if(midiMsg[USB_EVENT_BYTE0] == USB_MIDI_SYSEX_GEN_MESSAGE)
     {
-        if(midiMsg[USB_EVENT_BYTE0] == USB_MIDI_SYSEX_GEN_MESSAGE)
-        {
-            if(midiMsg[USB_EVENT_BYTE1] == USB_MIDI_SYSEX_SYSTEM_ON)
-            {
-//                MIDI_PWR_Write(0u); /* Power ON */
-            }
-            else if(midiMsg[USB_EVENT_BYTE1] == USB_MIDI_SYSEX_SYSTEM_OFF)
-            {
-//                MIDI_PWR_Write(1u); /* Power OFF */
-            }
-        }
+      if(midiMsg[USB_EVENT_BYTE1] == USB_MIDI_SYSEX_SYSTEM_ON)
+      {
+      // MIDI_PWR_Write(0u); /* Power ON */
+      }
+      else if(midiMsg[USB_EVENT_BYTE1] == USB_MIDI_SYSEX_SYSTEM_OFF)
+      {
+      // MIDI_PWR_Write(1u); /* Power OFF */
+      }
     }
-    inqFlagsOld = USB_MIDI1_InqFlags;
-    cable = cable;
+  }
+  inqFlagsOld = USB_MIDI1_InqFlags;
+  cable = cable;
 }    
 
 
@@ -356,7 +370,7 @@ void USB_callbackLocalMidiEvent(uint8 cable, uint8 *midiMsg) CYREENTRANT
 *******************************************************************************/
 void USB_MIDI1_ProcessUsbOut_EntryCallback(void)
 {
-    LED_OutA_Write(1);
+  LED_OutA_Write(1);
 }
 
 
@@ -369,7 +383,7 @@ void USB_MIDI1_ProcessUsbOut_EntryCallback(void)
 *******************************************************************************/
 void USB_MIDI1_ProcessUsbOut_ExitCallback(void)
 {
-    LED_OutA_Write(0);
+  LED_OutA_Write(0);
 }
 
 
@@ -383,7 +397,7 @@ void USB_MIDI1_ProcessUsbOut_ExitCallback(void)
 *******************************************************************************/
 void USB_MIDI2_ProcessUsbOut_EntryCallback(void)
 {
-    LED_OutB_Write(1);
+  LED_OutB_Write(1);
 }
 
 
@@ -396,7 +410,7 @@ void USB_MIDI2_ProcessUsbOut_EntryCallback(void)
 *******************************************************************************/
 void USB_MIDI2_ProcessUsbOut_ExitCallback(void)
 {
-    LED_OutB_Write(0);
+  LED_OutB_Write(0);
 }
 
 

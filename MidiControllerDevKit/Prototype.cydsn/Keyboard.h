@@ -22,10 +22,13 @@ typedef struct Keyboard_t Keyboard_t;
 struct Keyboard_t
 {
   void (*Init) (Keyboard_t *self);
+  uint8_t (*FsmStep) (Keyboard_t *self);
+  void (*Sleep) (Keyboard_t *self);
+  void (*WakeUp) (Keyboard_t *self);
 };
   
   
-  
+Keyboard_t * Keyboard_GetHandle (void);
   
   
 #endif // __KEYBOARD_H__

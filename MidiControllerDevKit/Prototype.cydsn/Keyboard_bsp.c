@@ -33,10 +33,14 @@ typedef struct
 Gpio_t _columns[KEYBOARD_N_COLUMNS];
 _KeyboardRow_t _rows[KEYBOARD_N_ROWS];
 
+void (*_KeyboardBsp_Timer_cb) (void* cb_ctx);
+void* _keyboardBsp_cb_ctx;
+
 // Private prototypes
 //======================================================================
 
 void _KeyboardBsp_ScanRow (_KeyboardRow_t *self, uint8_t *keys);
+CY_ISR_PROTO(_KeyboardTimer_isr);
 
 
 // Private variables
@@ -63,11 +67,24 @@ void _KeyboardBsp_ScanRow (_KeyboardRow_t *self, uint8_t *keys)
 }
 
 
+CY_ISR(_KeyboardTimer_isr)
+{
+  /* Clear Pending Interrupt */
+  KeyboardTimer_GetStatus();
+  
+  if (_KeyboardBsp_Timer_cb)
+  {
+    _KeyboardBsp_Timer_cb(_keyboardBsp_cb_ctx);
+  }
+}
+
+
 // Public functions
 //======================================================================
 
-void KeyboardBsp_Init (void)
+void KeyboardBsp_Init (void(*cb)(void*), void* cb_ctx)
 {  
+  
   _columns[0].Read  = &KeyboardCol_1_Read;
   _columns[0].Write = &KeyboardCol_1_Write;
   _columns[1].Read  = &KeyboardCol_2_Read;
@@ -91,23 +108,29 @@ void KeyboardBsp_Init (void)
   _rows[0].columns = _columns;
   _rows[0].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
   
-  _rows[0].row.Read  = &KeyboardRow_2_Read;
-  _rows[0].row.Write = &KeyboardRow_2_Write;
-  _rows[0].nColumns = KEYBOARD_N_COLUMNS;
-  _rows[0].columns = _columns;
-  _rows[0].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
+  _rows[1].row.Read  = &KeyboardRow_2_Read;
+  _rows[1].row.Write = &KeyboardRow_2_Write;
+  _rows[1].nColumns = KEYBOARD_N_COLUMNS;
+  _rows[1].columns = _columns;
+  _rows[1].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
   
-  _rows[0].row.Read  = &KeyboardRow_3_Read;
-  _rows[0].row.Write = &KeyboardRow_3_Write;
-  _rows[0].nColumns = KEYBOARD_N_COLUMNS;
-  _rows[0].columns = _columns;
-  _rows[0].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
+  _rows[2].row.Read  = &KeyboardRow_3_Read;
+  _rows[2].row.Write = &KeyboardRow_3_Write;
+  _rows[2].nColumns = KEYBOARD_N_COLUMNS;
+  _rows[2].columns = _columns;
+  _rows[2].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
   
-  _rows[0].row.Read  = &KeyboardRow_4_Read;
-  _rows[0].row.Write = &KeyboardRow_4_Write;
-  _rows[0].nColumns = KEYBOARD_N_COLUMNS;
-  _rows[0].columns = _columns;
-  _rows[0].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
+  _rows[3].row.Read  = &KeyboardRow_4_Read;
+  _rows[3].row.Write = &KeyboardRow_4_Write;
+  _rows[3].nColumns = KEYBOARD_N_COLUMNS;
+  _rows[3].columns = _columns;
+  _rows[3].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
+  
+  _keyboardBsp_cb_ctx = cb;
+  _keyboardBsp_cb_ctx = cb_ctx;
+  
+  KeyboardTimer_Start();
+  KeyboardTimer_isr_StartEx(_KeyboardTimer_isr);
 }
 
 
@@ -121,6 +144,18 @@ KeyboardRow_t* KeyboardBsp_GetRowHandle (uint8_t id)
   return &_rows[id].public;
 }
 
+void KeyboardBsp_Sleep (void)
+{
+  KeyboardTimer_Stop();
+  KeyboardTimer_isr_Stop();
+}
+
+
+void KeyboardBsp_WakeUp (void)
+{
+  KeyboardTimer_Start();
+}
+
 
 // Public constants
 //======================================================================
@@ -131,6 +166,6 @@ const uint8_t keyboardNotes[KEYBOARD_N_NOTES] =
 , 16, 17, 18, 19, 20, 21, 22, 23
 , 24, 25, 26, 27, 28, 29, 30, 31 };
 
-const uint8_t keyboardNotesOffset = F_4;
+const uint8_t keyboardNotesInitialOffset = F_4;
 
 /* [] END OF FILE */

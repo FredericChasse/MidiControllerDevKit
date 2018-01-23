@@ -21,6 +21,8 @@ struct UsbInterface_t
   void (*Init) (UsbInterface_t *self);
   uint8_t (*FsmStep) (UsbInterface_t *self);
   int8_t (*NewMidiMsg) (UsbInterface_t *self, uint8_t *msg, uint8_t msgSize);
+  void (*Sleep) (UsbInterface_t *self);
+  void (*WakeUp) (UsbInterface_t *self);
 };
 
 

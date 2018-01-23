@@ -27,6 +27,7 @@ typedef struct
   uint8_t notesIdx[KEYBOARD_N_ROWS][KEYBOARD_N_COLUMNS];
   uint8_t notesOffset;
   KeyboardRow_t *rows[KEYBOARD_N_ROWS];
+  uint8_t oReadyToScan;
 } _Keyboard_t;
 
 
@@ -35,7 +36,10 @@ typedef struct
 
 void _Keyboard_Init (_Keyboard_t *self);
 void _Keyboard_Scan (_Keyboard_t *self);
-CY_ISR_PROTO(_KeyboardTimer_isr);
+uint8_t _Keyboard_FsmStep (_Keyboard_t *self);
+void _Keyboard_Timer_cb (_Keyboard_t *self);
+void _Keyboard_Sleep (_Keyboard_t *self);
+void _Keyboard_WakeUp (_Keyboard_t *self);
 
 
 // Private variables
@@ -44,10 +48,10 @@ CY_ISR_PROTO(_KeyboardTimer_isr);
 _Keyboard_t _keyboard = 
 {
   .public.Init = (void(*)(Keyboard_t*))&_Keyboard_Init
- ,.notes = {{0}, {0}, {0}, {0}}
+ ,.public.FsmStep = (uint8_t(*)(Keyboard_t*)) &_Keyboard_FsmStep
+ ,.public.Sleep = (void(*)(Keyboard_t*)) &_Keyboard_Sleep
+ ,.public.WakeUp = (void(*)(Keyboard_t*)) &_Keyboard_WakeUp
 };
-
-volatile uint8_t _oReadyToScan = 0;
 
 
 // Private functions
@@ -57,12 +61,13 @@ void _Keyboard_Init (_Keyboard_t *self)
 {
   uint8_t i, j, k;
   
-  KeyboardBsp_Init();
+  self->oReadyToScan = 0;
+  
+  KeyboardBsp_Init((void(*)(void*))&_Keyboard_Timer_cb, (void*) self);
   
   self->midi = MidiInterface_GetHandle();
-  self->midi->Init(self->midi);
   
-  self->notesOffset = keyboardNotesOffset;
+  self->notesOffset = keyboardNotesInitialOffset;
   
   for (i = 0; i < KEYBOARD_N_ROWS; i++)
   {
@@ -74,6 +79,7 @@ void _Keyboard_Init (_Keyboard_t *self)
     for (j = 0; j < KEYBOARD_N_COLUMNS; j++, k++)
     {
       self->notesIdx[i][j] = keyboardNotes[k];
+      self->notes[i][j] = KEYBOARD_KEY_RELEASED;
     }
   }
 }
@@ -82,11 +88,10 @@ void _Keyboard_Init (_Keyboard_t *self)
 uint8_t _Keyboard_FsmStep (_Keyboard_t *self)
 {
   uint8_t ret = 0;
-  uint8_t i;
   
-  if (_oReadyToScan)
+  if (self->oReadyToScan)
   {
-    _oReadyToScan = 0;
+    self->oReadyToScan = 0;
     _Keyboard_Scan(self);
   }
   
@@ -121,9 +126,21 @@ void _Keyboard_Scan (_Keyboard_t *self)
 }
 
 
-CY_ISR(_KeyboardTimer_isr)
+void _Keyboard_Timer_cb (_Keyboard_t *self)
 {
-  _oReadyToScan = 1;
+  self->oReadyToScan = 1;
+}
+
+void _Keyboard_Sleep (_Keyboard_t *self)
+{
+  KeyboardBsp_Sleep();
+  self->oReadyToScan = 0;
+}
+
+
+void _Keyboard_WakeUp (_Keyboard_t *self)
+{
+  KeyboardBsp_WakeUp();
 }
 
 

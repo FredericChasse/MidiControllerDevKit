@@ -62,7 +62,6 @@ void _Midi_Init (_Midi_t *self)
   }
   
   self->usb = UsbInterface_GetHandle();
-  self->usb->Init(self->usb);
   
   self->oInitialized = 1;
 }
