@@ -153,8 +153,9 @@
 #define G_10  (127)
   
   
-#define MAX_MIDI_NOTE   (G_10)
-#define MIN_MIDI_NOTE   (C_0)
+#define MIDI_NOTE_MAX             (G_10)
+#define MIDI_NOTE_MIN             (C_0)
+#define MIDI_NOTE_MAX_VELOCITY    (127)
   
 #endif // __MIDI_NOTES_H__
 

@@ -48,6 +48,10 @@
           <File BuildType="BUILD" Toolchain="">Keyboard_bsp.h</File>
           <File BuildType="BUILD" Toolchain="">GpioInterface.h</File>
           <File BuildType="BUILD" Toolchain="">MidiNotes.h</File>
+          <File BuildType="BUILD" Toolchain="">MidiInterface.c</File>
+          <File BuildType="BUILD" Toolchain="">MidiInterface.h</File>
+          <File BuildType="BUILD" Toolchain="">UsbInterface.c</File>
+          <File BuildType="BUILD" Toolchain="">UsbInterface.h</File>
         </Files>
       </Folder>
       <Folder BuildType="STRICT" Path="C:\Users\frede\Documents\GitHub\MidiControllerDevKit\MidiControllerDevKit\Prototype.cydsn\Generated_Source\PSoC5">

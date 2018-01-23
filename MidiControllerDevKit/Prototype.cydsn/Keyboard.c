@@ -126,6 +126,7 @@ CY_ISR(_KeyboardTimer_isr)
   _oReadyToScan = 1;
 }
 
+
 // Public functions
 //======================================================================
 
