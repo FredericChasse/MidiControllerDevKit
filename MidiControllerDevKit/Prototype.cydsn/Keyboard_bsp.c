@@ -126,7 +126,7 @@ void KeyboardBsp_Init (void(*cb)(void*), void* cb_ctx)
   _rows[3].columns = _columns;
   _rows[3].public.ScanRow = (void(*)(KeyboardRow_t*,uint8_t*)) &_KeyboardBsp_ScanRow;
   
-  _keyboardBsp_cb_ctx = cb;
+  _KeyboardBsp_Timer_cb = cb;
   _keyboardBsp_cb_ctx = cb_ctx;
   
   KeyboardTimer_isr_StartEx(_KeyboardTimer_isr);
