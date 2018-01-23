@@ -1,0 +1,161 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+#ifndef __MIDI_NOTES_H__
+#define __MIDI_NOTES_H__
+  
+#define C_0   (0)
+#define CS_0  (1)
+#define D_0   (2)
+#define DS_0  (3)
+#define E_0   (4)
+#define F_0   (5)
+#define FS_0  (6)
+#define G_0   (7)
+#define GS_0  (8)
+#define A_0   (9)
+#define AS_0  (10)
+#define B_0   (11)
+  
+#define C_1   (12)
+#define CS_1  (13)
+#define D_1   (14)
+#define DS_1  (15)
+#define E_1   (16)
+#define F_1   (17)
+#define FS_1  (18)
+#define G_1   (19)
+#define GS_1  (20)
+#define A_1   (21)
+#define AS_1  (22)
+#define B_1   (23)
+  
+#define C_2   (24)
+#define CS_2  (25)
+#define D_2   (26)
+#define DS_2  (27)
+#define E_2   (28)
+#define F_2   (29)
+#define FS_2  (30)
+#define G_2   (31)
+#define GS_2  (32)
+#define A_2   (33)
+#define AS_2  (34)
+#define B_2   (35)
+  
+#define C_3   (36)
+#define CS_3  (37)
+#define D_3   (38)
+#define DS_3  (39)
+#define E_3   (40)
+#define F_3   (41)
+#define FS_3  (42)
+#define G_3   (43)
+#define GS_3  (44)
+#define A_3   (45)
+#define AS_3  (46)
+#define B_3   (47)
+  
+#define C_4   (48)
+#define CS_4  (49)
+#define D_4   (50)
+#define DS_4  (51)
+#define E_4   (52)
+#define F_4   (53)
+#define FS_4  (54)
+#define G_4   (55)
+#define GS_4  (56)
+#define A_4   (57)
+#define AS_4  (58)
+#define B_4   (59)
+  
+#define C_5   (60)
+#define CS_5  (61)
+#define D_5   (62)
+#define DS_5  (63)
+#define E_5   (64)
+#define F_5   (65)
+#define FS_5  (66)
+#define G_5   (67)
+#define GS_5  (68)
+#define A_5   (69)
+#define AS_5  (70)
+#define B_5   (71)
+  
+#define C_6   (72)
+#define CS_6  (73)
+#define D_6   (74)
+#define DS_6  (75)
+#define E_6   (76)
+#define F_6   (77)
+#define FS_6  (78)
+#define G_6   (79)
+#define GS_6  (80)
+#define A_6   (81)
+#define AS_6  (82)
+#define B_6   (83)
+  
+#define C_7   (84)
+#define CS_7  (85)
+#define D_7   (86)
+#define DS_7  (87)
+#define E_7   (88)
+#define F_7   (89)
+#define FS_7  (90)
+#define G_7   (91)
+#define GS_7  (92)
+#define A_7   (93)
+#define AS_7  (94)
+#define B_7   (95)
+  
+#define C_8   (96)
+#define CS_8  (97)
+#define D_8   (98)
+#define DS_8  (99)
+#define E_8   (100)
+#define F_8   (101)
+#define FS_8  (102)
+#define G_8   (103)
+#define GS_8  (104)
+#define A_8   (105)
+#define AS_8  (106)
+#define B_8   (107)
+  
+#define C_9   (108)
+#define CS_9  (109)
+#define D_9   (110)
+#define DS_9  (111)
+#define E_9   (112)
+#define F_9   (113)
+#define FS_9  (114)
+#define G_9   (115)
+#define GS_9  (116)
+#define A_9   (117)
+#define AS_9  (118)
+#define B_9   (119)
+  
+#define C_10  (120)
+#define CS_10 (121)
+#define D_10  (122)
+#define DS_10 (123)
+#define E_10  (124)
+#define F_10  (125)
+#define FS_10 (126)
+#define G_10  (127)
+  
+  
+#define MAX_MIDI_NOTE   (G_10)
+#define MIN_MIDI_NOTE   (C_0)
+  
+#endif // __MIDI_NOTES_H__
+
+/* [] END OF FILE */
