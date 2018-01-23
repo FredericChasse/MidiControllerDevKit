@@ -129,8 +129,8 @@ void KeyboardBsp_Init (void(*cb)(void*), void* cb_ctx)
   _keyboardBsp_cb_ctx = cb;
   _keyboardBsp_cb_ctx = cb_ctx;
   
-  KeyboardTimer_Start();
   KeyboardTimer_isr_StartEx(_KeyboardTimer_isr);
+  KeyboardTimer_Start();
 }
 
 

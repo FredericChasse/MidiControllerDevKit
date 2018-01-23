@@ -1842,7 +1842,7 @@
       </registers>
     </peripheral>
     <peripheral>
-      <name>SleepTimer</name>
+      <name>UsbSleepTimer</name>
       <description>No description available</description>
       <baseAddress>0x0</baseAddress>
       <addressBlock>
@@ -1852,7 +1852,7 @@
       </addressBlock>
       <registers>
         <register>
-          <name>SleepTimer_CTW_INTERVAL_REG</name>
+          <name>UsbSleepTimer_CTW_INTERVAL_REG</name>
           <description>Timewheel Configuration Register 1</description>
           <addressOffset>0x40004381</addressOffset>
           <size>8</size>
@@ -1870,7 +1870,7 @@
           </fields>
         </register>
         <register>
-          <name>SleepTimer_TW_CFG_REG</name>
+          <name>UsbSleepTimer_TW_CFG_REG</name>
           <description>Timewheel Configuration Register 2</description>
           <addressOffset>0x40004382</addressOffset>
           <size>8</size>
